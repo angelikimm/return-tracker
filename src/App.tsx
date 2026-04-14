@@ -2420,6 +2420,49 @@ export default function App() {
           </div>
         </header>
 
+<div
+  style={{
+    ...cardStyle,
+    padding: '12px 16px',
+    marginBottom: 20,
+    background: '#fffdf5',
+    border: '1px solid #f1f5f9',
+    boxShadow: 'none',
+  }}
+>
+  <div
+    style={{
+      fontSize: 12,
+      fontWeight: 700,
+      color: '#92400e',
+      textTransform: 'uppercase',
+      letterSpacing: '0.06em',
+      marginBottom: 4,
+      textAlign: 'left',
+    }}
+  >
+    Important — Read before use
+  </div>
+
+  <div
+    style={{
+      fontSize: 13,
+      color: '#374151',
+      lineHeight: 1.55,
+      textAlign: 'left',
+    }}
+  >
+    Use <strong>Chrome</strong> for the best experience and to install the app.
+    Manage, and add your own, shop return policies in{' '}
+    <strong>Edit Shop Policies</strong>. Archive receipts when they’re no longer
+    needed. This app is <strong>desktop-only</strong>. Be sure to read the{' '}
+    <strong>Backup &amp; Data Safety</strong> section carefully.
+    <span style={{ marginLeft: 6 }}>
+      <strong>Many happy returns!</strong>
+    </span>
+  </div>
+</div>
+
         <AddReceiptForm
           description={description}
           setDescription={setDescription}
