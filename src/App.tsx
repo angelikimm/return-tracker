@@ -1,4 +1,23 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+
+function useIsMobile(maxWidth = 900) {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= maxWidth : false
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= maxWidth);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, [maxWidth]);
+
+  return isMobile;
+}
 import { downloadJson, parseImportedBackup } from './data/backup';
 import { useReceiptAppData } from './hooks/useReceiptAppData';
 import type { Receipt } from './data/receiptsRepo';
@@ -1822,6 +1841,7 @@ function UrgentSummary({
 
 
 export default function App() {
+  const isMobile = useIsMobile();
   const {
     receipts,
     sortedReceipts,
@@ -2258,6 +2278,69 @@ export default function App() {
     setLastBackupAt(importedAt);
     localStorage.setItem('return-tracker-last-backup', importedAt);
   };
+
+  if (isMobile) {
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#f7f7f8',
+        padding: 24,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'Arial, sans-serif',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div
+        style={{
+          ...cardStyle,
+          maxWidth: 420,
+          width: '100%',
+          padding: 24,
+          textAlign: 'left',
+          boxShadow: 'none',
+        }}
+      >
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: '#92400e',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            marginBottom: 8,
+          }}
+        >
+          Desktop only
+        </div>
+
+        <h1
+          style={{
+            margin: '0 0 8px',
+            fontSize: 22,
+            color: '#111827',
+          }}
+        >
+          Please open this app on a desktop browser
+        </h1>
+
+        <div
+          style={{
+            fontSize: 14,
+            color: '#374151',
+            lineHeight: 1.6,
+          }}
+        >
+          Return Tracker is designed for desktop use and is not available on
+  mobile devices. If your browser window is reduced, expand it for the
+  best experience.
+        </div>
+      </div>
+    </div>
+  );
+}
 
   if (loading) {
     return (
