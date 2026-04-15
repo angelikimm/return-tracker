@@ -2280,67 +2280,72 @@ export default function App() {
   };
 
   if (isMobile) {
-  return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: '#f7f7f8',
-        padding: 24,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'Arial, sans-serif',
-        boxSizing: 'border-box',
-      }}
-    >
+    return (
       <div
         style={{
-          ...cardStyle,
-          maxWidth: 420,
-          width: '100%',
+          minHeight: '100vh',
+          background: '#f7f7f8',
           padding: 24,
-          textAlign: 'left',
-          boxShadow: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'Arial, sans-serif',
+          boxSizing: 'border-box',
         }}
       >
         <div
           style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: '#92400e',
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            marginBottom: 8,
+            ...cardStyle,
+            maxWidth: 460,
+            width: '100%',
+            padding: 24,
+            textAlign: 'left',
+            boxShadow: 'none',
           }}
         >
-          Desktop only
-        </div>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#92400e',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              marginBottom: 8,
+            }}
+          >
+            Desktop only
+          </div>
 
-        <h1
-          style={{
-            margin: '0 0 8px',
-            fontSize: 22,
-            color: '#111827',
-          }}
-        >
-          Please open this app on a desktop browser
-        </h1>
+          <h1
+            style={{
+              margin: '0 0 10px',
+              fontSize: 22,
+              color: '#111827',
+              lineHeight: 1.3,
+              letterSpacing: '0',
+              fontWeight: 700,
+              maxWidth: 320,
+            }}
+          >
+            Please open this app on a desktop browser
+          </h1>
 
-        <div
-          style={{
-            fontSize: 14,
-            color: '#374151',
-            lineHeight: 1.6,
-          }}
-        >
-          Return Tracker is designed for desktop use and is not available on
-  mobile devices. If your browser window is reduced, expand it for the
-  best experience.
+          <div
+            style={{
+              fontSize: 14,
+              color: '#374151',
+              lineHeight: 1.6,
+              maxWidth: 380,
+            }}
+          >
+            Return Tracker is designed for desktop use and is not available on
+            mobile devices. If you are seeing this message on a desktop browser,
+            your window may be reduced. Please expand it for the best experience.
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   if (loading) {
     return (
@@ -2535,14 +2540,7 @@ export default function App() {
               textAlign: 'left',
             }}
           >
-            Use <strong>Chrome</strong> for the best experience and to install the app.
-            Manage, and add your own, shop return policies in{' '}
-            <strong>Edit Shop Policies</strong>. Archive receipts when they’re no longer
-            needed. This app is <strong>desktop-only</strong>. Be sure to read the{' '}
-            <strong>Backup &amp; Data Safety</strong> section carefully.
-            <span style={{ marginLeft: 6 }}>
-              <strong>Many happy returns!</strong>
-            </span>
+            This app can only be installed through <strong>Chrome</strong>. If you are using it in a browser, <strong>Chrome</strong> is recommended, but other browsers are also supported. Add new shop return policies in <strong>Edit Shop Policies</strong>. Archive receipts when they are no longer needed. Please read the <strong>Backup &amp; Data Safety</strong> section carefully. <strong>Many happy returns!</strong>
           </div>
         </div>
 
