@@ -516,7 +516,7 @@ function AddReceiptForm({
       onSubmit={onSubmit}
       style={{
         padding: 0,
-        marginBottom: 22,
+        margin: '0 0 8px 0',
         background: 'transparent',
         border: 'none',
         boxShadow: 'none',
@@ -1929,7 +1929,7 @@ export default function App() {
   const [showArchivedReceipts, setShowArchivedReceipts] = useState(false);
   const [showShopPolicies, setShowShopPolicies] = useState(false);
   const [, setTodayTick] = useState(0);
-  const [showStorageInfo, setShowStorageInfo] = useState(false);
+  const [showUsageInfo, setShowUsageInfo] = useState(false);
   const [lastBackupAt, setLastBackupAt] = useState<string | null>(() => {
     return localStorage.getItem('return-tracker-last-backup');
   });
@@ -2442,9 +2442,8 @@ export default function App() {
 
         <header
           style={{
-            marginBottom: 20,
-            padding: '4px 0 16px',
-            borderBottom: '1px solid #e5e7eb',
+            marginBottom: 4,
+            padding: '4px 0 0',
           }}
         >
           <div
@@ -2456,7 +2455,7 @@ export default function App() {
               flexWrap: 'wrap',
             }}
           >
-            <div style={{ textAlign: 'left' }}>
+            <div style={{ textAlign: 'left', paddingLeft: 4 }}>
               <div
                 style={{
                   color: '#6b7280',
@@ -2482,15 +2481,7 @@ export default function App() {
                 Return Tracker
               </h1>
 
-              <p
-                style={{
-                  margin: '6px 0 0',
-                  color: '#6b7280',
-                  fontSize: 14,
-                }}
-              >
-                Track active return windows and archived receipts in one place.
-              </p>
+
             </div>
 
             <div
@@ -2510,37 +2501,177 @@ export default function App() {
 
         <div
           style={{
-            ...cardStyle,
-            padding: '12px 16px',
-            marginBottom: 20,
-            background: '#fffdf5',
-            border: '1px solid #f1f5f9',
-            boxShadow: 'none',
+            marginBottom: showUsageInfo ? 16 : 64,
+            paddingBottom: 0,
           }}
         >
-          <div
+          <button
+            type="button"
+            onClick={() => setShowUsageInfo((prev) => !prev)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#f9fafb';
+              e.currentTarget.style.borderColor = '#e5e7eb';
+
+              const text = e.currentTarget.querySelector('[data-title]');
+              if (text) (text as HTMLElement).style.color = '#dc2626';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.borderColor = 'transparent';
+
+              const text = e.currentTarget.querySelector('[data-title]');
+              if (text) (text as HTMLElement).style.color = '#5f1212';
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = 'scale(0.98)';
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
             style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#92400e',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              marginBottom: 4,
+              width: '100%',
+              padding: '10px 12px',
+              marginLeft: -12,
+              borderRadius: 10,
+              border: '1px solid transparent',
+              background: 'transparent',
+              cursor: 'pointer',
               textAlign: 'left',
+              transition: 'all 0.18s ease',
             }}
           >
-            Important — Read before use
-          </div>
+            <span
+              data-title
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8, // 👈 slightly more space
+                fontSize: 13,
+                fontWeight: 800, // 👈 stronger
+                lineHeight: 1.4,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                color: '#5f1212',
+                transition: 'color 0.18s ease, transform 0.18s ease',
+              }}
+            >
+              <span>Using Return Tracker &amp; keeping your receipts safe</span>
+
+              <span
+                style={{
+                  fontSize: 13,
+                  color: 'currentColor',
+                  transform: showUsageInfo ? 'rotate(90deg)' : 'rotate(0deg)',
+                  transition: 'transform 220ms ease',
+                  display: 'inline-block',
+                  transformOrigin: 'center',
+                  marginTop: 1,
+                }}
+              >
+                ▸
+              </span>
+            </span>
+          </button>
 
           <div
             style={{
-              fontSize: 13,
-              color: '#374151',
-              lineHeight: 1.55,
-              textAlign: 'left',
+              display: 'grid',
+              gridTemplateRows: showUsageInfo ? '1fr' : '0fr',
+              transition: 'grid-template-rows 260ms ease',
             }}
           >
-            This app can only be installed through <strong>Chrome</strong>. If you are using it in a browser, <strong>Chrome</strong> is recommended, but other browsers are also supported. Add new shop return policies in <strong>Edit Shop Policies</strong>. Archive receipts when they are no longer needed. Please read the <strong>Backup &amp; Data Safety</strong> section carefully. <strong>Many happy returns!</strong>
+            <div style={{ overflow: 'hidden' }}>
+              <div
+                style={{
+                  marginTop: showUsageInfo ? 8 : 0,
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+                  gap: 24,
+                  textAlign: 'left',
+                  opacity: showUsageInfo ? 1 : 0,
+                  transform: showUsageInfo ? 'translateY(0)' : 'translateY(-8px)',
+                  transition:
+                    'opacity 220ms ease, transform 260ms ease, margin-top 260ms ease',
+                  pointerEvents: showUsageInfo ? 'auto' : 'none',
+                  background: '#ffffff',
+                  border: 'none',
+                  borderRadius: 12,
+                  boxShadow: showUsageInfo ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
+                  padding: showUsageInfo ? '16px 12px' : '0 12px',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'grid',
+                    gap: 8,
+                    minWidth: 0,
+                    color: '#374151',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: '#111827',
+                    }}
+                  >
+                    Data &amp; Backup
+                  </div>
+
+                  <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
+                    This app runs on your device and stores data in your browser.
+                  </div>
+
+                  <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
+                    Your data does not sync between devices or browsers.
+                  </div>
+
+                  <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
+                    Switching device or clearing your browser may remove your receipts.
+                  </div>
+
+                  <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
+                    Export a backup to keep a safe copy, and import it anytime to restore your data.
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gap: 8,
+                    minWidth: 0,
+                    color: '#4b5563',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: '#111827',
+                    }}
+                  >
+                    Using Return Tracker
+                  </div>
+
+                  <div style={{ fontSize: 13, lineHeight: 1.65 }}>
+                    You can only install this app through <strong>Chrome</strong>.
+                  </div>
+
+                  <div style={{ fontSize: 13, lineHeight: 1.65 }}>
+                    Press <strong>Reload</strong> to update when a new version is available.
+                  </div>
+
+                  <div style={{ fontSize: 13, lineHeight: 1.65 }}>
+                    Add new shop return policies in <strong>Edit Shop Policies</strong>.
+                  </div>
+
+                  <div style={{ fontSize: 13, lineHeight: 1.65 }}>
+                    <strong>Archive</strong> receipts when you no longer need them.
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2566,7 +2697,7 @@ export default function App() {
           style={{
             display: 'grid',
             gridTemplateColumns: '280px minmax(0, 1fr)',
-            gap: 20,
+            gap: 24,
             alignItems: 'start',
             width: '100%',
           }}
@@ -2709,80 +2840,7 @@ export default function App() {
                   )}
                 </section>
 
-                <section>
-                  <button
-                    type="button"
-                    onClick={() => setShowStorageInfo((prev) => !prev)}
-                    style={{
-                      width: '100%',
-                      padding: 0,
-                      margin: 0,
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                    }}
-                  >
-                    <div
-                      style={{
-                        marginBottom: showStorageInfo ? 14 : 0,
-                        padding: '10px 12px',
-                        background: '#f9fafb',
-                        borderRadius: 10,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                      }}
-                    >
-                      <h2 style={sectionTitleStyle}>Backup & Data Safety</h2>
 
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: '#6b7280',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {showStorageInfo ? 'Hide' : 'Show'}
-                      </span>
-                    </div>
-                  </button>
-
-                  {showStorageInfo && (
-                    <div
-                      style={{
-                        fontSize: 13,
-                        color: '#374151',
-                        lineHeight: 1.6,
-                        display: 'grid',
-                        gap: 10,
-                        textAlign: 'left',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          color: '#111827',
-                          fontSize: 14,
-                          marginBottom: 4,
-                        }}
-                      >
-                        This app runs on your device and stores data using your browser.
-                      </div>
-
-                      <div>
-                        <strong>Export backup to keep a safe copy.</strong>
-                      </div>
-
-                      <div>Your data does not sync between devices or browsers.</div>
-                      <div>Switching browsers or devices will not carry your receipts over.</div>
-                      <div>Clearing app or browser data may remove your receipts.</div>
-                      <div>Import backup to restore saved data.</div>
-                      <div>Press Reload when a new version is available.</div>
-                    </div>
-                  )}
-                </section>
               </div>
             </section>
           </aside>
