@@ -815,7 +815,23 @@ function ShopPolicyManager({
     }));
 
     if (!shopOrder.includes(trimmedName)) {
-      setShopOrder((prev) => [...prev, trimmedName]);
+      setShopOrder((prev) => {
+        const next = [...prev];
+
+        const insertIndex = next.findIndex(
+          (name) => trimmedName.localeCompare(name, 'en-GB') < 0
+        );
+
+        if (insertIndex === -1) {
+          // goes at the end
+          next.push(trimmedName);
+        } else {
+          // insert before the first larger item
+          next.splice(insertIndex, 0, trimmedName);
+        }
+
+        return next;
+      });
     }
 
     setShop(trimmedName);
@@ -1929,7 +1945,14 @@ export default function App() {
   const [showArchivedReceipts, setShowArchivedReceipts] = useState(false);
   const [showShopPolicies, setShowShopPolicies] = useState(false);
   const [, setTodayTick] = useState(0);
-  const [showUsageInfo, setShowUsageInfo] = useState(false);
+  const [showUsageInfo, setShowUsageInfo] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('return-tracker-show-usage-info');
+      return stored === null ? true : stored === 'true';
+    } catch {
+      return true;
+    }
+  });
   const [lastBackupAt, setLastBackupAt] = useState<string | null>(() => {
     return localStorage.getItem('return-tracker-last-backup');
   });
@@ -1977,6 +2000,17 @@ export default function App() {
       JSON.stringify(shopPolicies)
     );
   }, [shopPolicies]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        'return-tracker-show-usage-info',
+        String(showUsageInfo)
+      );
+    } catch {
+      // ignore storage errors
+    }
+  }, [showUsageInfo]);
 
   useEffect(() => {
     const validNames = new Set(Object.keys(shopPolicies));
@@ -2442,7 +2476,7 @@ export default function App() {
 
         <header
           style={{
-            marginBottom: 4,
+            marginBottom: 8,
             padding: '4px 0 0',
           }}
         >
@@ -2460,215 +2494,207 @@ export default function App() {
                 style={{
                   color: '#6b7280',
                   fontSize: 13,
-                  fontWeight: 700,
                   marginBottom: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  flexWrap: 'wrap',
                 }}
               >
-                Today · {formatTodayLabel()}
+                <span style={{ fontWeight: 700 }}>
+                  {formatTodayLabel()}
+                </span>
+
+                <span aria-hidden="true">•</span>
+
+                <span style={{ fontWeight: 500 }}>
+                  {receipts.filter((receipt) => !receipt.archived).length} active
+                </span>
+
+                <span aria-hidden="true">•</span>
+
+                <span style={{ fontWeight: 500 }}>
+                  {receipts.filter((receipt) => receipt.archived).length} archived
+                </span>
               </div>
 
-              <h1
+              <div
                 style={{
-                  margin: 0,
-                  fontSize: 28,
-                  fontWeight: 700,
-                  fontFamily: 'Georgia, serif',
-                  color: '#111827',
-                  letterSpacing: '-0.01em',
-                  lineHeight: 1.1,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  flexWrap: 'wrap',
                 }}
               >
-                Return Tracker
-              </h1>
+                <h1
+                  style={{
+                    margin: 0,
+                    fontSize: 28,
+                    fontWeight: 700,
+                    fontFamily: 'Georgia, serif',
+                    color: '#111827',
+                    letterSpacing: '-0.01em',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  Return Tracker
+                </h1>
 
 
+              </div>
             </div>
 
             <div
               style={{
-                color: '#4b5563',
-                fontSize: 13,
-                fontWeight: 600,
-                whiteSpace: 'nowrap',
-                paddingTop: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
               }}
             >
-              {receipts.filter((receipt) => !receipt.archived).length} active •{' '}
-              {receipts.filter((receipt) => receipt.archived).length} archived
+              <button
+                type="button"
+                aria-expanded={showUsageInfo}
+                aria-controls="return-tracker-info-panel"
+                onClick={() => setShowUsageInfo((prev) => !prev)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#111827';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#5f1212';
+                }}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  padding: 0,
+                  margin: 0,
+                  marginTop: 45,
+                  fontSize: 13,
+                  fontWeight: 400,
+                  letterSpacing: '0.02em',
+                  color: '#5f1212',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  transition: 'color 0.15s ease',
+                }}
+              >
+                <span>
+                  {showUsageInfo ? 'Hide Istructions' : 'Show Instructions'}
+                </span>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    transform: showUsageInfo ? 'rotate(90deg)' : 'rotate(0deg)',
+                    transition: 'transform 220ms ease',
+                    transformOrigin: 'center',
+                    lineHeight: 1,
+                  }}
+                >
+                  ▸
+                </span>
+              </button>
             </div>
           </div>
         </header>
 
         <div
+          id="return-tracker-info-panel"
           style={{
-            marginBottom: showUsageInfo ? 16 : 64,
-            paddingBottom: 0,
+            display: 'grid',
+            gridTemplateRows: showUsageInfo ? '1fr' : '0fr',
+            transition: 'grid-template-rows 260ms ease',
+            marginBottom: showUsageInfo ? 20 : 28,
           }}
         >
-          <button
-            type="button"
-            onClick={() => setShowUsageInfo((prev) => !prev)}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#f9fafb';
-              e.currentTarget.style.borderColor = '#e5e7eb';
-
-              const text = e.currentTarget.querySelector('[data-title]');
-              if (text) (text as HTMLElement).style.color = '#dc2626';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.borderColor = 'transparent';
-
-              const text = e.currentTarget.querySelector('[data-title]');
-              if (text) (text as HTMLElement).style.color = '#5f1212';
-            }}
-            onMouseDown={(e) => {
-              e.currentTarget.style.transform = 'scale(0.98)';
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              marginLeft: -12,
-              borderRadius: 10,
-              border: '1px solid transparent',
-              background: 'transparent',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'all 0.18s ease',
-            }}
-          >
-            <span
-              data-title
+          <div style={{ overflow: 'hidden' }}>
+            <div
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8, // 👈 slightly more space
-                fontSize: 13,
-                fontWeight: 800, // 👈 stronger
-                lineHeight: 1.4,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-                color: '#5f1212',
-                transition: 'color 0.18s ease, transform 0.18s ease',
+                marginTop: showUsageInfo ? 8 : 0,
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+                gap: 24,
+                textAlign: 'left',
+                opacity: showUsageInfo ? 1 : 0,
+                transform: showUsageInfo ? 'translateY(0)' : 'translateY(-8px)',
+                transition:
+                  'opacity 220ms ease, transform 260ms ease, margin-top 260ms ease',
+                pointerEvents: showUsageInfo ? 'auto' : 'none',
+                background: '#ffffff',
+                border: 'none',
+                borderRadius: 12,
+                boxShadow: showUsageInfo ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
+                padding: showUsageInfo ? '16px 12px' : '0 12px',
+                boxSizing: 'border-box',
               }}
             >
-              <span>Using Return Tracker &amp; keeping your receipts safe</span>
-
-              <span
-                style={{
-                  fontSize: 13,
-                  color: 'currentColor',
-                  transform: showUsageInfo ? 'rotate(90deg)' : 'rotate(0deg)',
-                  transition: 'transform 220ms ease',
-                  display: 'inline-block',
-                  transformOrigin: 'center',
-                  marginTop: 1,
-                }}
-              >
-                ▸
-              </span>
-            </span>
-          </button>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateRows: showUsageInfo ? '1fr' : '0fr',
-              transition: 'grid-template-rows 260ms ease',
-            }}
-          >
-            <div style={{ overflow: 'hidden' }}>
               <div
                 style={{
-                  marginTop: showUsageInfo ? 8 : 0,
                   display: 'grid',
-                  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-                  gap: 24,
-                  textAlign: 'left',
-                  opacity: showUsageInfo ? 1 : 0,
-                  transform: showUsageInfo ? 'translateY(0)' : 'translateY(-8px)',
-                  transition:
-                    'opacity 220ms ease, transform 260ms ease, margin-top 260ms ease',
-                  pointerEvents: showUsageInfo ? 'auto' : 'none',
-                  background: '#ffffff',
-                  border: 'none',
-                  borderRadius: 12,
-                  boxShadow: showUsageInfo ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
-                  padding: showUsageInfo ? '16px 12px' : '0 12px',
-                  boxSizing: 'border-box',
+                  gap: 8,
+                  minWidth: 0,
+                  color: '#374151',
                 }}
               >
                 <div
                   style={{
-                    display: 'grid',
-                    gap: 8,
-                    minWidth: 0,
-                    color: '#374151',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: '#111827',
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: '#111827',
-                    }}
-                  >
-                    Data &amp; Backup
-                  </div>
-
-                  <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
-                    This app runs on your device and stores data in your browser.
-                  </div>
-
-                  <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
-                    Your data does not sync between devices or browsers.
-                  </div>
-
-                  <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
-                    Switching device or clearing your browser may remove your receipts.
-                  </div>
-
-                  <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
-                    Export a backup to keep a safe copy, and import it anytime to restore your data.
-                  </div>
+                  Data &amp; Backup
                 </div>
 
+                <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
+                  This app runs on your device and stores data in your browser.
+                </div>
+
+                <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
+                  Your data does not sync between devices or browsers.
+                </div>
+
+                <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
+                  Switching device or clearing your browser may remove your receipts.
+                </div>
+
+                <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
+                  Export a backup to keep a safe copy, and import it anytime to restore your data.
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gap: 8,
+                  minWidth: 0,
+                  color: '#4b5563',
+                }}
+              >
                 <div
                   style={{
-                    display: 'grid',
-                    gap: 8,
-                    minWidth: 0,
-                    color: '#4b5563',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: '#111827',
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: '#111827',
-                    }}
-                  >
-                    Using Return Tracker
-                  </div>
+                  Using Return Tracker
+                </div>
 
-                  <div style={{ fontSize: 13, lineHeight: 1.65 }}>
-                    You can only install this app through <strong>Chrome</strong>.
-                  </div>
+                <div style={{ fontSize: 13, lineHeight: 1.65 }}>
+                  You can only install this app through <strong>Chrome</strong>.
+                </div>
 
-                  <div style={{ fontSize: 13, lineHeight: 1.65 }}>
-                    Press <strong>Reload</strong> to update when a new version is available.
-                  </div>
+                <div style={{ fontSize: 13, lineHeight: 1.65 }}>
+                  Press <strong>Reload</strong> to update when a new version is available.
+                </div>
 
-                  <div style={{ fontSize: 13, lineHeight: 1.65 }}>
-                    Add new shop return policies in <strong>Edit Shop Policies</strong>.
-                  </div>
+                <div style={{ fontSize: 13, lineHeight: 1.65 }}>
+                  Add new shop return policies in <strong>Edit Shop Policies</strong>.
+                </div>
 
-                  <div style={{ fontSize: 13, lineHeight: 1.65 }}>
-                    <strong>Archive</strong> receipts when you no longer need them.
-                  </div>
+                <div style={{ fontSize: 13, lineHeight: 1.65 }}>
+                  <strong>Archive</strong> receipts when you no longer need them.
                 </div>
               </div>
             </div>
