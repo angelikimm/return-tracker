@@ -80,6 +80,8 @@ const DEFAULT_SHOP_POLICIES: Record<string, number> = {
   Zara: 30,
 };
 
+const GUIDE_VERSION = '2';
+
 const cardStyle: React.CSSProperties = {
   background: 'white',
   border: '1px solid #f1f5f9',
@@ -276,13 +278,6 @@ function formatBackupTimestamp(value: string | null) {
   });
 }
 
-function formatTodayLabel() {
-  return new Date().toLocaleDateString('en-GB', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
-}
 
 function formatWeekday(dateString: string) {
   return parseLocalDate(dateString).toLocaleDateString('en-GB', {
@@ -1944,10 +1939,17 @@ export default function App() {
   const [editState, setEditState] = useState<EditState>(null);
   const [showArchivedReceipts, setShowArchivedReceipts] = useState(false);
   const [showShopPolicies, setShowShopPolicies] = useState(false);
-  const [, setTodayTick] = useState(0);
+  const [todayTick, setTodayTick] = useState(0);
   const [showUsageInfo, setShowUsageInfo] = useState<boolean>(() => {
     try {
+      const seenVersion = localStorage.getItem('return-tracker-guide-version-seen');
       const stored = localStorage.getItem('return-tracker-show-usage-info');
+
+      // force open whenever the guide version changes
+      if (seenVersion !== GUIDE_VERSION) {
+        return true;
+      }
+
       return stored === null ? true : stored === 'true';
     } catch {
       return true;
@@ -1960,6 +1962,19 @@ export default function App() {
     description?: string;
     shop?: string;
   }>({});
+
+  const [isGuideUpdate, setIsGuideUpdate] = useState<boolean>(() => {
+    try {
+      const seenVersion = localStorage.getItem('return-tracker-guide-version-seen');
+      return seenVersion !== GUIDE_VERSION;
+    } catch {
+      return true;
+    }
+  });
+
+  const [isHeaderHovered, setIsHeaderHovered] = useState(false);
+
+  const bulletColor = isGuideUpdate ? '#7f1d1d' : '#9ca3af';
 
   useEffect(() => {
     let midnightTimeout: number | undefined;
@@ -1995,6 +2010,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    setPurchaseDate(getTodayInputValue());
+  }, [todayTick]);
+
+  useEffect(() => {
     localStorage.setItem(
       'return-tracker-shop-policies',
       JSON.stringify(shopPolicies)
@@ -2007,6 +2026,14 @@ export default function App() {
         'return-tracker-show-usage-info',
         String(showUsageInfo)
       );
+
+      if (!showUsageInfo) {
+        localStorage.setItem(
+          'return-tracker-guide-version-seen',
+          GUIDE_VERSION
+        );
+        setIsGuideUpdate(false);
+      }
     } catch {
       // ignore storage errors
     }
@@ -2473,7 +2500,6 @@ export default function App() {
             </div>
           </div>
         )}
-
         <header
           style={{
             marginBottom: 8,
@@ -2483,219 +2509,292 @@ export default function App() {
           <div
             style={{
               display: 'flex',
-              alignItems: 'flex-start',
               justifyContent: 'space-between',
-              gap: 20,
-              flexWrap: 'wrap',
+              alignItems: 'flex-start',
             }}
           >
-            <div style={{ textAlign: 'left', paddingLeft: 4 }}>
+            {/* LEFT COLUMN */}
+            <div style={{ paddingLeft: 4 }}>
+
+              {/* top row */}
               <div
                 style={{
-                  color: '#6b7280',
-                  fontSize: 13,
-                  marginBottom: 8,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
-                  flexWrap: 'wrap',
+                  gap: 8,
+                  fontSize: 13,
+                  marginBottom: 6,
                 }}
               >
-                <span style={{ fontWeight: 700 }}>
-                  {formatTodayLabel()}
+                <span style={{ fontWeight: 700, color: '#4b5563' }}>
+                  {new Date().toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
                 </span>
 
-                <span aria-hidden="true">•</span>
-
-                <span style={{ fontWeight: 500 }}>
-                  {receipts.filter((receipt) => !receipt.archived).length} active
+                <span
+                  style={{
+                    color: '#9ca3af',
+                    fontWeight: 700,
+                    fontSize: 12,
+                  }}
+                >
+                  •
                 </span>
 
-                <span aria-hidden="true">•</span>
-
-                <span style={{ fontWeight: 500 }}>
-                  {receipts.filter((receipt) => receipt.archived).length} archived
+                <span
+                  style={{
+                    color: '#9ca3af',
+                    fontWeight: 400, // 👈 unbold weekday
+                  }}
+                >
+                  {new Date().toLocaleDateString('en-GB', {
+                    weekday: 'long',
+                  })}
                 </span>
               </div>
 
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <h1
+              {/* TITLE — now truly left-aligned */}
+              <div style={{ marginBottom: 2 }}>
+                <div
                   style={{
-                    margin: 0,
-                    fontSize: 28,
-                    fontWeight: 700,
-                    fontFamily: 'Georgia, serif',
-                    color: '#111827',
-                    letterSpacing: '-0.01em',
-                    lineHeight: 1.1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    cursor: 'pointer',
+                    width: 'fit-content',
+                    transform: isHeaderHovered ? 'translateY(-0.5px)' : 'translateY(0)',
+                    transition: 'color 180ms ease, transform 180ms ease',
                   }}
+                  onClick={() => setShowUsageInfo((prev) => !prev)}
+                  onMouseEnter={() => setIsHeaderHovered(true)}
+                  onMouseLeave={() => setIsHeaderHovered(false)}
                 >
-                  Return Tracker
-                </h1>
+                  <h1
+                    style={{
+                      margin: 0,
+                      fontSize: 28,
+                      fontWeight: 700,
+                      fontFamily: 'Georgia, serif',
+                      color: isHeaderHovered ? '#5f1212' : '#111827',
+                      transition: 'color 180ms ease',
+                      letterSpacing: '-0.01em',
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    Return Tracker
+                  </h1>
+
+                  <span
+                    style={{
+                      fontSize: 16,
+                      color: isHeaderHovered ? '#5f1212' : '#111827',
+                      transform: showUsageInfo
+                        ? 'rotate(90deg) translateY(1px)'
+                        : 'rotate(0deg) translateY(1px)',
+                      transition: 'transform 220ms ease, color 180ms ease',
+                      display: 'inline-block',
+                      position: 'relative',
+                      top: 4,
+                    }}
+                  >
+                    ▸
+                  </span>
+                </div>
+
 
 
               </div>
             </div>
 
+            {/* RIGHT COLUMN (counter only) */}
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
+                fontSize: 13,
+                color: '#6b7280',
+                fontWeight: 500,
+                marginTop: 2,
               }}
             >
-              <button
-                type="button"
-                aria-expanded={showUsageInfo}
-                aria-controls="return-tracker-info-panel"
-                onClick={() => setShowUsageInfo((prev) => !prev)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#111827';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#5f1212';
-                }}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  padding: 0,
-                  margin: 0,
-                  marginTop: 45,
-                  fontSize: 13,
-                  fontWeight: 400,
-                  letterSpacing: '0.02em',
-                  color: '#5f1212',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  transition: 'color 0.15s ease',
-                }}
-              >
-                <span>
-                  {showUsageInfo ? 'Hide Istructions' : 'Show Instructions'}
-                </span>
-                <span
-                  style={{
-                    display: 'inline-block',
-                    transform: showUsageInfo ? 'rotate(90deg)' : 'rotate(0deg)',
-                    transition: 'transform 220ms ease',
-                    transformOrigin: 'center',
-                    lineHeight: 1,
-                  }}
-                >
-                  ▸
-                </span>
-              </button>
+              {receipts.filter((r) => !r.archived).length} active
+              <span style={{ margin: '0 6px' }}>•</span>
+              {receipts.filter((r) => r.archived).length} archived
             </div>
           </div>
         </header>
 
+        {!isGuideUpdate && (
+          <div
+            style={{
+              height: 1,
+              background: '#e5e7eb',
+              borderRadius: 0,
+              width: '100%',
+              marginTop: 0,
+              marginBottom: 12,
+            }}
+          />
+        )}
         <div
           id="return-tracker-info-panel"
           style={{
             display: 'grid',
             gridTemplateRows: showUsageInfo ? '1fr' : '0fr',
-            transition: 'grid-template-rows 260ms ease',
-            marginBottom: showUsageInfo ? 20 : 28,
+            transition: 'grid-template-rows 300ms cubic-bezier(0.22, 1, 0.36, 1)',
+            marginBottom: showUsageInfo ? 28 : 16,
+            position: 'relative',
+            background: isGuideUpdate ? '#fbf4f4' : 'transparent',
+            borderRadius: isGuideUpdate ? 8 : 0,
+            border: isGuideUpdate ? '1px solid #ead6d6' : 'none',
+            boxShadow: 'none',
+            padding: isGuideUpdate ? '14px 16px 16px 20px' : 0,
+            overflow: 'hidden',
           }}
         >
-          <div style={{ overflow: 'hidden' }}>
+          {isGuideUpdate && (
             <div
               style={{
-                marginTop: showUsageInfo ? 8 : 0,
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-                gap: 24,
-                textAlign: 'left',
-                opacity: showUsageInfo ? 1 : 0,
-                transform: showUsageInfo ? 'translateY(0)' : 'translateY(-8px)',
-                transition:
-                  'opacity 220ms ease, transform 260ms ease, margin-top 260ms ease',
-                pointerEvents: showUsageInfo ? 'auto' : 'none',
-                background: '#ffffff',
-                border: 'none',
-                borderRadius: 12,
-                boxShadow: showUsageInfo ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
-                padding: showUsageInfo ? '16px 12px' : '0 12px',
-                boxSizing: 'border-box',
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: 8,
+                background: '#5f1212',
+                borderRadius: '8px 0 0 8px',
               }}
-            >
+            />
+          )}
+
+          <div style={{ overflow: 'hidden' }}>
+            {isGuideUpdate && (
               <div
                 style={{
-                  display: 'grid',
-                  gap: 8,
-                  minWidth: 0,
-                  color: '#374151',
+                  marginBottom: 16,
+                  fontSize: 13,
+                  color: '#6b1a1a',
+                  lineHeight: 1.5,
+                  textAlign: 'left',
+                  opacity: showUsageInfo ? 1 : 0,
+                  transform: showUsageInfo ? 'translateY(0)' : 'translateY(-6px)',
+                  transition: 'opacity 220ms ease, transform 220ms ease',
+                  pointerEvents: showUsageInfo ? 'auto' : 'none',
                 }}
               >
-                <div
+                <span
                   style={{
+                    fontWeight: 600,
+                    letterSpacing: '0.015em',
                     fontSize: 14,
-                    fontWeight: 700,
-                    color: '#111827',
                   }}
                 >
-                  Data &amp; Backup
-                </div>
-
-                <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
-                  This app runs on your device and stores data in your browser.
-                </div>
-
-                <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
-                  Your data does not sync between devices or browsers.
-                </div>
-
-                <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
-                  Switching device or clearing your browser may remove your receipts.
-                </div>
-
-                <div style={{ fontSize: 13, lineHeight: 1.65, fontWeight: 600 }}>
-                  Export a backup to keep a safe copy, and import it anytime to restore your data.
-                </div>
+                  Important information updated — please review.
+                </span>{' '}
+                <span
+                  style={{
+                    fontWeight: 400,
+                    fontSize: 13,
+                  }}
+                >
+                  This notice will disappear once the Return Tracker panel is collapsed.
+                </span>
               </div>
+            )}
 
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1.15fr) minmax(0, 0.85fr)',
+                gap: 36,
+                opacity: showUsageInfo ? 1 : 0,
+                transform: showUsageInfo ? 'translateY(0)' : 'translateY(-8px)',
+                transition: 'opacity 220ms ease, transform 260ms ease',
+                pointerEvents: showUsageInfo ? 'auto' : 'none',
+              }}
+            >
+              {/* LEFT COLUMN */}
               <div
                 style={{
                   display: 'grid',
-                  gap: 8,
-                  minWidth: 0,
+                  gap: 10,
                   color: '#4b5563',
                 }}
               >
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: '#111827',
-                  }}
-                >
-                  Using Return Tracker
-                </div>
+                {[
+                  <>This app runs on your device and stores data in your <strong style={{ fontWeight: 600 }}>browser</strong>.</>,
+                  <>Your data does not sync between devices or browsers.</>,
+                  <>Switching device or <strong style={{ fontWeight: 600 }}>clearing your browser</strong> may remove your receipts.</>,
+                  <><strong style={{ fontWeight: 600 }}>Export a backup</strong> to keep a safe copy, and import it anytime to restore your data.</>,
+                ].map((content, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 10,
+                      fontSize: 13,
+                      lineHeight: 1.7,
+                      fontWeight: 500,
+                      letterSpacing: '0.01em',
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: 4,
+                        height: 4,
+                        borderRadius: '50%',
+                        background: bulletColor,
+                        flexShrink: 0,
+                        marginTop: '0.72em',
+                      }}
+                    />
+                    <span>{content}</span>
+                  </div>
+                ))}
+              </div>
 
-                <div style={{ fontSize: 13, lineHeight: 1.65 }}>
-                  You can only install this app through <strong>Chrome</strong>.
-                </div>
-
-                <div style={{ fontSize: 13, lineHeight: 1.65 }}>
-                  Press <strong>Reload</strong> to update when a new version is available.
-                </div>
-
-                <div style={{ fontSize: 13, lineHeight: 1.65 }}>
-                  Add new shop return policies in <strong>Edit Shop Policies</strong>.
-                </div>
-
-                <div style={{ fontSize: 13, lineHeight: 1.65 }}>
-                  <strong>Archive</strong> receipts when you no longer need them.
-                </div>
+              {/* RIGHT COLUMN */}
+              <div
+                style={{
+                  display: 'grid',
+                  gap: 10,
+                  color: '#4b5563',
+                }}
+              >
+                {[
+                  <>You can only install this app through <strong style={{ fontWeight: 600 }}>Chrome</strong>.</>,
+                  <>Press <strong style={{ fontWeight: 600 }}>Reload</strong> to update when a new version is available.</>,
+                  <>Add new shop return policies in <strong style={{ fontWeight: 600 }}>Edit Shop Policies</strong>.</>,
+                  <><strong style={{ fontWeight: 600 }}>Archive</strong> receipts when you no longer need them.</>,
+                ].map((content, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 10,
+                      fontSize: 13,
+                      lineHeight: 1.7,
+                      fontWeight: 500,
+                      letterSpacing: '0.01em',
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: 4,
+                        height: 4,
+                        borderRadius: '50%',
+                        background: bulletColor,
+                        flexShrink: 0,
+                        marginTop: '0.7em',
+                      }}
+                    />
+                    <span>{content}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
