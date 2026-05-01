@@ -2446,7 +2446,7 @@ export default function App() {
               maxWidth: 320,
             }}
           >
-            Please open this app on a desktop browser
+            Please open this app on a desktop browser or a large tablet.
           </h1>
 
           <div
