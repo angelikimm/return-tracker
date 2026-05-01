@@ -489,6 +489,7 @@ function AddReceiptForm({
   matchingShops,
   shopPolicies,
   errors,
+  isSubmittingReceipt,
   onSubmit,
 }: {
   description: string;
@@ -504,6 +505,7 @@ function AddReceiptForm({
     description?: string;
     shop?: string;
   };
+  isSubmittingReceipt: boolean;
   onSubmit: (e: React.FormEvent) => void;
 }) {
   return (
@@ -566,8 +568,11 @@ function AddReceiptForm({
               fontSize: 12,
               textAlign: 'left',
               lineHeight: 1.2,
+
               opacity: errors.description ? 1 : 0,
-              transition: 'opacity 0.18s ease',
+
+              transition: 'opacity 900ms cubic-bezier(0.22, 1, 0.36, 1)',
+
               pointerEvents: 'none',
             }}
           >
@@ -649,8 +654,11 @@ function AddReceiptForm({
               fontSize: 12,
               textAlign: 'left',
               lineHeight: 1.2,
+
               opacity: errors.shop ? 1 : 0,
-              transition: 'opacity 0.18s ease',
+
+              transition: 'opacity 900ms cubic-bezier(0.22, 1, 0.36, 1)',
+
               pointerEvents: 'none',
             }}
           >
@@ -686,13 +694,37 @@ function AddReceiptForm({
         >
           <Button
             type="submit"
+            disabled={isSubmittingReceipt}
             style={{
               borderRadius: 10,
               whiteSpace: 'nowrap',
               height: 40,
+              width: 120,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+
+              background: '#ffffff',
+
+              color: isSubmittingReceipt ? '#166534' : '#111827',
+              WebkitTextFillColor: isSubmittingReceipt ? '#166534' : '#111827',
+
+              border: isSubmittingReceipt
+                ? '1px solid #166534'
+                : '1px solid #111827',
+
+              transform: 'none',
+
+              boxShadow: isSubmittingReceipt
+                ? 'inset 0 0 0 1px rgba(22, 101, 52, 0.08)'
+                : 'none',
+
+              transition:
+                'color 900ms cubic-bezier(0.22, 1, 0.36, 1), border-color 900ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 1200ms cubic-bezier(0.22, 1, 0.36, 1)',
             }}
           >
-            Add receipt
+            {isSubmittingReceipt ? 'Added ✓' : 'Add Receipt'}
           </Button>
           <div aria-hidden="true">{' '}</div>
         </div>
@@ -1263,6 +1295,7 @@ function ReceiptsTable({
   onRestore,
   archived,
   headerActions,
+  lastAddedId,
 }: {
   title?: string;
   receipts: Receipt[];
@@ -1275,6 +1308,7 @@ function ReceiptsTable({
   onRestore: (id: string) => void;
   archived: boolean;
   headerActions?: React.ReactNode;
+  lastAddedId?: string | null;
 }) {
 
   return (
@@ -1416,6 +1450,7 @@ function ReceiptsTable({
               const daysLeft = getReceiptDaysLeft(receipt);
               const rowBackground = index % 2 === 0 ? '#ffffff' : '#f9fafb';
               const urgencyTone = getUrgencyTone(daysLeft);
+              const isNew = receipt.id === lastAddedId;
 
               return (
                 <tr
@@ -1426,11 +1461,13 @@ function ReceiptsTable({
                   }}
                   onMouseLeave={(e) => {
                     (e.currentTarget as HTMLTableRowElement).style.background =
-                      rowBackground;
+                      isNew ? '#fbfdfb' : rowBackground;
                   }}
                   style={{
-                    background: rowBackground,
-                    transition: 'background 0.15s ease, transform 0.15s ease',
+                    background: isNew ? '#fbfdfb' : rowBackground,
+                    boxShadow: isNew ? 'inset 3px 0 0 rgba(22, 101, 52, 0.22)' : 'none',
+                    transition:
+                      'background 2400ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 2400ms cubic-bezier(0.22, 1, 0.36, 1)',
                   }}
                 >
                   <td style={{ ...tableCellStyle, textAlign: 'center' }}>
@@ -1963,6 +2000,9 @@ export default function App() {
     shop?: string;
   }>({});
 
+  const [isSubmittingReceipt, setIsSubmittingReceipt] = useState(false);
+  const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+
   const [isGuideUpdate, setIsGuideUpdate] = useState<boolean>(() => {
     try {
       const seenVersion = localStorage.getItem('return-tracker-guide-version-seen');
@@ -2141,12 +2181,21 @@ export default function App() {
 
     setFormErrors(nextErrors);
 
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0) {
+      window.setTimeout(() => {
+        setFormErrors({});
+      }, 2600);
+
+      return;
+    }
+
+    setIsSubmittingReceipt(true);
 
     const normalizedShop = normalizeShopName(shop);
     const existingShop = findExistingShopName(normalizedShop, shopPolicies);
     const finalShop = existingShop || normalizedShop;
     const shopDays = shopPolicies[finalShop] || 30;
+    const newId = generateId();
 
     if (!existingShop) {
       setShopPolicies((prev) => ({ ...prev, [finalShop]: 30 }));
@@ -2161,7 +2210,7 @@ export default function App() {
         : 1;
 
     await addReceipt({
-      id: generateId(),
+      id: newId,
       orderNumber: nextOrderNumber,
       description: description.trim().toUpperCase(),
       shop: finalShop,
@@ -2174,6 +2223,15 @@ export default function App() {
     setShop('');
     setShowShopSuggestions(false);
     setFormErrors({});
+    setLastAddedId(newId);
+
+    window.setTimeout(() => {
+      setIsSubmittingReceipt(false);
+    }, 2200);
+
+    window.setTimeout(() => {
+      setLastAddedId(null);
+    }, 3600);
   };
 
   const saveEdit = async () => {
@@ -2812,6 +2870,7 @@ export default function App() {
           matchingShops={matchingShops}
           shopPolicies={shopPolicies}
           errors={formErrors}
+          isSubmittingReceipt={isSubmittingReceipt}
           onSubmit={(e) => {
             e.preventDefault();
             void handleAddReceipt();
@@ -3089,6 +3148,7 @@ export default function App() {
               <ReceiptsTable
                 title="Active receipts"
                 receipts={activeReceipts}
+                lastAddedId={lastAddedId}
                 selectedIds={selectedActiveIds}
                 toggleSelected={toggleSelectedActive}
                 toggleSelectAll={toggleSelectAllActive}
